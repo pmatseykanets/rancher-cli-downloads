@@ -1,0 +1,50 @@
+name: ci
+
+# Lints and tests on every change to code, tooling or workflows. The daily
+# data commits change only data/ and start no run.
+on:
+  push:
+    branches: [main]
+    paths: &code
+      - "**.py"
+      - "**.sh"
+      - ".githooks/**"
+      - ".github/workflows/**"
+      - "Makefile"
+      - "pyproject.toml"
+  pull_request:
+    paths: *code
+  workflow_dispatch:
+
+permissions: {}
+
+# A newer push to a pull request cancels the older run; every commit on main
+# gets its own complete run.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  validate:
+    name: Lint and test
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read # checks out the repository
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
+        with:
+          version: "0.12.15"
+          enable-cache: false
+
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version: "1.27"
+          cache: false
+
+      - name: Lint and test
+        run: make validate

@@ -1,0 +1,15 @@
+[project]
+name = "rancher-cli-downloads"
+version = "0"
+description = "Daily download counts of the rancher-cli release assets"
+requires-python = ">=3.11"
+
+[tool.ruff]
+line-length = 120
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "W", "F", "I", "B", "UP", "SIM", "PL", "RUF"]
+ignore = [
+  "PLR2004", # numbers in tests and field counts read better inline
+]

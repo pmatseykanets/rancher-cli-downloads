@@ -1,0 +1,21 @@
+#!/bin/sh
+# Refuses a commit when lint or tests fail. Install with `make hooks`.
+#
+# It checks the files as they are on disk, staged or not, and runs only when
+# the commit changes a file the ci workflow checks.
+set -eu
+cd "$(git rev-parse --show-toplevel)"
+
+if ! git diff --cached --name-only --diff-filter=ACMR |
+  grep -qE '\.(py|sh)$|^\.githooks/|^\.github/workflows/|^Makefile$|^pyproject\.toml$'; then
+  exit 0
+fi
+
+for tool in make uvx go jq python3; do
+  if ! command -v "$tool" >/dev/null 2>&1; then
+    echo "pre-commit: $tool is not on PATH; the lint and tests need it" >&2
+    exit 1
+  fi
+done
+
+exec make validate

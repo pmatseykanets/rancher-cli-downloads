@@ -1,0 +1,45 @@
+name: snapshot
+
+# Once a day, appends the download counts of every published rancher-cli
+# release asset to data/downloads.jsonl and commits the file.
+on:
+  schedule:
+    - cron: "41 5 * * *"
+  workflow_dispatch:
+
+permissions: {}
+
+concurrency:
+  group: snapshot
+  cancel-in-progress: false
+
+jobs:
+  snapshot:
+    name: Snapshot release downloads
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: write # commits data/downloads.jsonl to main
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Take a snapshot
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: ./snapshot.sh data/downloads.jsonl
+
+      - name: Check that the report reads the file
+        run: python3 report.py data/downloads.jsonl >/dev/null
+
+      - name: Commit and push
+        env:
+          TOKEN: ${{ github.token }}
+        run: |
+          git add data/downloads.jsonl
+          git -c user.name="github-actions[bot]" \
+            -c user.email="41898282+github-actions[bot]@users.noreply.github.com" \
+            commit -q -m "Snapshot of $(date -u +%Y-%m-%d)"
+          git push -q "https://x-access-token:${TOKEN}@github.com/${GITHUB_REPOSITORY}.git" HEAD:main
