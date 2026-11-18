@@ -16,7 +16,11 @@ ACTIONLINT := go run github.com/rhysd/actionlint/cmd/actionlint@$(ACTIONLINT_VER
 SH_FILES := $(sort $(shell git ls-files --cached --others --exclude-standard '*.sh') $(wildcard .githooks/*))
 WORKFLOWS := $(wildcard .github/workflows/*.yaml .github/workflows/*.yml)
 
-.PHONY: help validate lint test fmt hooks
+# Options of the report target.
+BY ?= week
+EXCLUDE ?=
+
+.PHONY: help validate lint test fmt hooks status resume snapshot report
 
 help: ## list the targets
 	@grep -E '^[a-z]+:.*## ' $(MAKEFILE_LIST) | awk -F':.*## ' '{ printf "  %-9s %s\n", $$1, $$2 }'
@@ -42,3 +46,21 @@ fmt: ## rewrite Python and shell files to their formatted form
 
 hooks: ## make git run the hooks in .githooks (sets this repo's core.hooksPath)
 	git config core.hooksPath .githooks
+
+status: ## show whether the workflows are on and the last snapshot runs; fails when the snapshot schedule is off
+	@for w in snapshot.yaml ci.yaml; do \
+	  printf '%-14s %s\n' "$$w" "$$(gh api "repos/{owner}/{repo}/actions/workflows/$$w" --jq .state)"; \
+	done
+	@gh run list --workflow snapshot.yaml --limit 5
+	@test "$$(gh api 'repos/{owner}/{repo}/actions/workflows/snapshot.yaml' --jq .state)" = active || \
+	  { echo "status: the snapshot workflow is not active; run make resume" >&2; exit 1; }
+
+resume: ## turn the snapshot workflow back on and start one run now
+	gh workflow enable snapshot.yaml
+	gh workflow run snapshot.yaml
+
+snapshot: ## start one snapshot run now
+	gh workflow run snapshot.yaml
+
+report: ## print downloads per period of data/downloads.jsonl (BY=day|week|month, EXCLUDE=<file>)
+	@python3 report.py --by $(BY) $(if $(EXCLUDE),--exclude $(EXCLUDE)) data/downloads.jsonl

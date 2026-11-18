@@ -64,7 +64,8 @@ yet, and a count that goes negative.
 ## Development
 
 Needs make, Python 3.11 or later, [uv](https://docs.astral.sh/uv/), Go and
-jq.
+jq; the `status`, `resume` and `snapshot` targets also need
+[gh](https://cli.github.com/), signed in.
 
 | Command | Does |
 |---|---|
@@ -73,6 +74,10 @@ jq.
 | `make test` | the unit tests of `report.py` and of `snapshot.sh` (with a stub `gh`; skipped without jq, except in CI) |
 | `make fmt` | rewrite Python and shell files to their formatted form |
 | `make hooks` | make git run the hooks in `.githooks`, by setting this repo's `core.hooksPath` |
+| `make status` | show whether the `snapshot` and `ci` workflows are on and list the last 5 snapshot runs; fails when GitHub turned the snapshot schedule off |
+| `make resume` | turn the snapshot workflow back on and start one run now |
+| `make snapshot` | start one snapshot run now |
+| `make report` | print downloads per period of `data/downloads.jsonl` (run `git pull` first for the newest data); `BY=day\|week\|month` and `EXCLUDE=<file>` pass through |
 | `make help` | list the targets |
 
 The linters run at the versions pinned in the `Makefile`, through `uvx` or
