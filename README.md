@@ -55,6 +55,8 @@ yet, and a count that goes negative.
 - The counts carry no user or machine, so they cannot tell how many people
   downloaded.
 - Requests from crawlers and automation are counted too.
+- Downloads before 2026-11-09, the day rancher/rancher-cli became public,
+  came from people with access to the repository.
 - GitHub may run a scheduled workflow late or skip a run; each line carries
   its own time, so a missed day only makes the next difference cover two
   days.
